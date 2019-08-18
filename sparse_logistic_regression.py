@@ -33,6 +33,17 @@ class MultiClassLogisticRegression(object):
         predict = tf.cast(tf.argmax(predict, axis=1), dtype=tf.float64)
         return tf.reshape(predict, (-1, 1))
 
+    def save_model(self):
+        import pickle
+        with open('parameters.txt', 'wb+') as file:
+            pickle.dump([self.w, self.b], file)
+
+    def load_model(self):
+        import pickle
+        with open('parameters.txt', 'rb') as file:
+            variables = pickle.load(file)
+            [self.w, self.b] = variables
+
 
 # two class logistic regression
 class LogisticRegression(object):
@@ -65,11 +76,23 @@ class LogisticRegression(object):
         predict = tf.math.round(predict)
         return tf.reshape(predict, (-1, 1))
 
+    def save_model(self):
+        import pickle
+        with open('parameters.txt', 'wb+') as file:
+            pickle.dump([self.w, self.b], file)
+
+    def load_model(self):
+        import pickle
+        with open('parameters.txt', 'rb') as file:
+            variables = pickle.load(file)
+            [self.w, self.b] = variables
+
 
 if __name__ == '__main__':
     from sklearn.datasets import load_digits
     from sklearn.model_selection import train_test_split
     import numpy as np
+    import os
 
     raw_data = load_digits(n_class=10)
     X = np.array(raw_data.data, dtype=np.float64)
@@ -78,7 +101,10 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     y_train = tf.reshape(y_train, (-1, 1))
     y_test = tf.reshape(y_test, (-1, 1))
-    lr = MultiClassLogisticRegression(feature_dim=64, class_dim=10, iteration=10000)
+    lr = MultiClassLogisticRegression(feature_dim=64, class_dim=10, iteration=1000)
+    if 'parameters.txt' in os.listdir('.'):
+        lr.load_model()
     lr.fit(X_train, y_train)
+    lr.save_model()
     pred = lr.predict(X_test)
     tf.print(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64)))
