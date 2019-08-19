@@ -134,7 +134,8 @@ class SparseLogisticRegression(object):
                                                   combiner='sum')
                 predict = tf.nn.bias_add(z, self.b)
                 loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=predict))
-                tf.print(loss)
+                template = "The training loss at {} iteration is {}"
+                tf.print(template.format(i, loss))
 
     def predict(self, test_id, test_val):
         indices, ids, values, shape = self.batch_sparse_data(test_id, test_val)
@@ -201,7 +202,7 @@ if __name__ == '__main__':
     pred = slr.predict(test_id, test_val)
 
     # print accuracy
-    tf.print(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64)))
+    tf.print('the accuarcy is {}'.format(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64))))
 
     # y_train = tf.reshape(y_train, (-1, 1))
     # y_test = tf.reshape(y_test, (-1, 1))
