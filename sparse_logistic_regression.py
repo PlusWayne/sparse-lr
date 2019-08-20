@@ -204,9 +204,7 @@ if __name__ == '__main__':
     # print accuracy
     tf.print('the accuarcy is {}'.format(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64))))
 
-    # y_train = tf.reshape(y_train, (-1, 1))
-    # y_test = tf.reshape(y_test, (-1, 1))
-
+    """ test multi class logistic regression with digits data"""
     # raw_data = load_digits(n_class=10)
     # X = np.array(raw_data.data, dtype=np.float64)
     # y = np.array(raw_data.target, dtype=np.float64)

@@ -10,7 +10,9 @@ def parse_one_sample(line):
 
 
 def to_tfrecords(file_path):
-    tf_file_name = file_path[:-3] + '.tfrecord'
+    file_name = file_path.split('/')[-1][:-3]
+    tf_file_name = os.path.join('.',  file_name + '.tfrecord')
+    print('writing {}'.format(tf_file_name))
     file = gzip.open(file_path)
     with tf.io.TFRecordWriter(tf_file_name) as writer:
         while True:
@@ -45,8 +47,8 @@ if __name__ == '__main__':
     all_files_list = []
     for gz_file in os.listdir(args.input):
         if re.match('.*gz$', gz_file):
-            all_files_list.append(gz_file)
-    pool = multiprocessing.Pool(1)
+            all_files_list.append(os.path.join(args.input, gz_file))
+    pool = multiprocessing.Pool(16)
     pool.map(to_tfrecords, all_files_list)
 # example_ = tf.train.Example()
 # example_.ParseFromString(serialized_example)
