@@ -1,6 +1,66 @@
 import tensorflow as tf
 
 
+# two class fm
+class FactorizationMachines(object):
+    def __init__(self, feature_dim, factor_size, iteration=2000):
+        self.feature_dim = feature_dim
+        self.iteration = iteration
+        self.w = tf.Variable(tf.random.normal(shape=(self.feature_dim, 1), dtype=tf.float64))
+        self.v = tf.Variable(
+            tf.random.normal(shape=(self.feature_dim, factor_size), mean=0.02, stddev=0.1, dtype=tf.float64))
+        self.b = tf.Variable(tf.constant(shape=(1,), value=0.01, dtype=tf.float64))
+
+    def train_step(self, train, label, optimizer):
+        with tf.GradientTape() as tape:
+            linear_part = tf.add(tf.matmul(train, self.w), self.b)
+            sum_part = tf.square(tf.matmul(train, self.v))
+            square_part = tf.matmul(tf.square(train), tf.square(self.v))
+            second_part = 0.5 * tf.reduce_sum(tf.subtract(sum_part, square_part), 1)
+            second_part = tf.reshape(second_part, (-1, 1))
+            predict = linear_part + second_part
+            loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=predict))
+        gradients = tape.gradient(loss, [self.w, self.b, self.v])
+        optimizer.apply_gradients(zip(gradients, [self.w, self.b, self.v]))
+
+    def fit(self, train, label):
+        optimizer = tf.optimizers.Adam()
+        for i in range(self.iteration):
+            self.train_step(train, label, optimizer)
+            if i % 100 == 0:
+                # t_label = tf.one_hot(label, 1)
+                linear_part = tf.add(tf.matmul(train, self.w), self.b)
+                sum_part = tf.square(tf.matmul(train, self.v))
+                square_part = tf.matmul(tf.square(train), tf.square(self.v))
+                second_part = 0.5 * tf.reduce_sum(tf.subtract(sum_part, square_part), 1)
+                second_part = tf.reshape(second_part, (-1, 1))
+                predict = linear_part + second_part
+                loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=predict))
+                tf.print(loss)
+
+    def predict(self, train):
+        linear_part = tf.add(tf.matmul(train, self.w), self.b)
+        sum_part = tf.square(tf.matmul(train, self.v))
+        square_part = tf.matmul(tf.square(train), tf.square(self.v))
+        second_part = 0.5 * tf.reduce_sum(tf.subtract(sum_part, square_part), 1)
+        second_part = tf.reshape(second_part, (-1, 1))
+        predict = linear_part + second_part
+        predict = tf.nn.sigmoid(predict)
+        predict = tf.math.round(predict)
+        return tf.reshape(predict, (-1, 1))
+
+    def save_model(self):
+        import pickle
+        with open('parameters.txt', 'wb+') as file:
+            pickle.dump([self.w, self.b], file)
+
+    def load_model(self):
+        import pickle
+        with open('parameters.txt', 'rb') as file:
+            variables = pickle.load(file)
+            [self.w, self.b] = variables
+
+
 # sparse two class logistic regression
 class SparseFactorizationMachines(object):
     def __init__(self, feature_dim, factor_size, iteration=2000):
@@ -21,7 +81,7 @@ class SparseFactorizationMachines(object):
             sum_square = tf.square(embedding)
             second_part = 0.5 * tf.reduce_sum(tf.subtract(sum_square, embedding_square), 1)
             second_part = tf.reshape(second_part, (-1, 1))
-            predict = tf.nn.bias_add(linear_part+second_part, self.b)
+            predict = tf.nn.bias_add(linear_part + second_part, self.b)
             loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=label, logits=predict))
             # tf.print(loss)
         gradients = tape.gradient(loss, [self.w, self.b, self.v])
@@ -128,25 +188,23 @@ if __name__ == '__main__':
     test_id, test_val = to_sparse_matrix(X_test)
     y_train = tf.reshape(y_train, (-1, 1))
     y_test = tf.reshape(y_test, (-1, 1))
-    slr = SparseFactorizationMachines(feature_dim=64, factor_size=1, iteration=10000)
+    slr = SparseFactorizationMachines(feature_dim=64, factor_size=8, iteration=1000)
+    slr.load_model()
     slr.fit(train_id, train_val, y_train)
     pred = slr.predict(test_id, test_val)
 
     # print accuracy
     tf.print('the accuarcy is {}'.format(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64))))
 
-    """ test multi class logistic regression with digits data"""
-    # raw_data = load_digits(n_class=10)
+    """ test two class fm  with digits data"""
+    # raw_data = load_digits(n_class=2)
     # X = np.array(raw_data.data, dtype=np.float64)
     # y = np.array(raw_data.target, dtype=np.float64)
     #
     # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     # y_train = tf.reshape(y_train, (-1, 1))
     # y_test = tf.reshape(y_test, (-1, 1))
-    # lr = MultiClassLogisticRegression(feature_dim=64, class_dim=10, iteration=1000)
-    # if 'parameters.txt' in os.listdir('.'):
-    #     lr.load_model()
+    # lr = FactorizationMachines(feature_dim=64, factor_size=8, iteration=1000)
     # lr.fit(X_train, y_train)
-    # lr.save_model()
     # pred = lr.predict(X_test)
     # tf.print(tf.reduce_mean(tf.cast(tf.equal(pred, y_test), dtype=tf.float64)))
