@@ -36,3 +36,7 @@ predict = tf.nn.bias_add(z, self.b)
 基于Horovod框架，将源代码稍作修改，便可以实现分布式的训练，详细代码见`sparse_logistic_regression_horovod.py`。
 
 ## 训练以及测试
+`train_sparse_lr.py`和`test_sparse_lr.py`是用来训练和测试sparse logisitc regression的
+
+`train_sparse_lr_horovod.py`和`test_sparse_lr_horovod.py`是用来训练和测试distributed sparse logisitc regression的。
+train的时候用法`horovodrun --start-timeout 60 -np 8 -H 100.102.33.44:8 --verbose python train_sparse_lr_horovod.py`
